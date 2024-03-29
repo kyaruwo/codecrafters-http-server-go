@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net"
@@ -10,7 +11,12 @@ import (
 	"strings"
 )
 
+var directory string
+
 func main() {
+	flag.StringVar(&directory, "directory", "", "")
+	flag.Parse()
+
 	l, err := net.Listen("tcp", "0.0.0.0:4221")
 	if err != nil {
 		fmt.Println("Failed to bind to port 4221")
@@ -69,7 +75,7 @@ func handler(conn net.Conn) {
 			log.Fatal(err)
 		}
 
-		file, err := os.Open(file_name)
+		file, err := os.Open(directory + "/" + file_name)
 		if err != nil {
 			response = "HTTP/1.1 404 NOT FOUND\r\n\r\n"
 		} else {
