@@ -62,6 +62,38 @@ func main() {
 	}
 }
 
+func router(conn net.Conn) {
+	r := request(conn)
+
+	var response string
+
+	if r.method == "GET" && r.path == "/" {
+		response = get_health()
+	}
+	if r.method == "GET" && strings.HasPrefix(r.path, "/echo/") {
+		response = get_echo(r)
+	}
+	if r.method == "GET" && r.path == "/user-agent" {
+		response = get_user_agent(r)
+	}
+	if r.method == "GET" && strings.HasPrefix(r.path, "/files/") {
+		response = get_file(r)
+	}
+	if r.method == "POST" && strings.HasPrefix(r.path, "/files/") {
+		response = post_file(r)
+	}
+	if response == "" {
+		response = StatusCode.NOT_FOUND
+	}
+
+	_, err := conn.Write([]byte(response + "\r\n\r\n"))
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	conn.Close()
+}
+
 type Request struct {
 	method     string
 	path       string
@@ -69,7 +101,7 @@ type Request struct {
 	body       string
 }
 
-func router(conn net.Conn) {
+func request(conn net.Conn) Request {
 	request_bytes := make([]byte, 1024)
 	n, err := conn.Read(request_bytes)
 	if err != nil {
@@ -96,40 +128,12 @@ func router(conn net.Conn) {
 
 	body := lines[len(lines)-1]
 
-	r := Request{
+	return Request{
 		method,
 		path,
 		user_agent,
 		body,
 	}
-
-	var response string
-
-	if path == "/" && method == "GET" {
-		response = get_health()
-	}
-	if strings.HasPrefix(path, "/echo/") && method == "GET" {
-		response = get_echo(r)
-	}
-	if path == "/user-agent" && method == "GET" {
-		response = get_user_agent(r)
-	}
-	if strings.HasPrefix(path, "/files/") && method == "GET" {
-		response = get_file(r)
-	}
-	if strings.HasPrefix(path, "/files/") && method == "POST" {
-		response = post_file(r)
-	}
-	if response == "" {
-		response = StatusCode.NOT_FOUND
-	}
-
-	_, err = conn.Write([]byte(response + "\r\n\r\n"))
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	conn.Close()
 }
 
 func get_health() string {
@@ -176,6 +180,7 @@ func get_file(r Request) string {
 	body := string(file_content[:n])
 
 	file.Close()
+
 	return StatusCode.OK +
 		ContentType.file +
 		"Content-Length: " + content_length +
