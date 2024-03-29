@@ -108,6 +108,9 @@ func router(conn net.Conn) {
 	if path == "/" && method == "GET" {
 		response = get_health()
 	}
+	if strings.HasPrefix(path, "/echo/") && method == "GET" {
+		response = get_echo(r)
+	}
 	if path == "/user-agent" && method == "GET" {
 		response = get_user_agent(r)
 	}
@@ -131,6 +134,18 @@ func router(conn net.Conn) {
 
 func get_health() string {
 	return StatusCode.OK
+}
+
+func get_echo(r Request) string {
+	echo, _ := strings.CutPrefix(r.path, "/echo/")
+
+	content_length := strconv.Itoa(len(echo))
+
+	return StatusCode.OK +
+		ContentType.text +
+		"Content-Length: " + content_length +
+		"\r\n\r\n" +
+		echo
 }
 
 func get_user_agent(r Request) string {
