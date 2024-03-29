@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -63,6 +64,11 @@ func handler(conn net.Conn) {
 			user_agent + "\r\n\r\n"
 	} else if strings.HasPrefix(path, "/files/") {
 		file_name, _ := strings.CutPrefix(path, "/files/")
+		file_name, err = url.QueryUnescape(file_name)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		file, err := os.Open(file_name)
 		if err != nil {
 			response = "HTTP/1.1 404 NOT FOUND\r\n\r\n"
@@ -80,6 +86,7 @@ func handler(conn net.Conn) {
 				"Content-Length: " + len + "\r\n\r\n" +
 				body + "\r\n\r\n"
 		}
+		file.Close()
 	} else {
 		response = "HTTP/1.1 404 NOT FOUND\r\n\r\n"
 	}
