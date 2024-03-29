@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -33,6 +34,14 @@ func main() {
 	var response string
 	if path == "/" {
 		response = "HTTP/1.1 200 OK\r\n\r\n"
+	} else if strings.HasPrefix(path, "/echo/") {
+		body := strings.Split(path, "/")[1]
+		len := strconv.Itoa(len(body))
+
+		response = "HTTP/1.1 200 OK\r\n" +
+			"Content-Type: text/plain\r\n" +
+			"Content-Length: " + len + "\r\n\r\n" +
+			strings.Split(path, "/")[2] + "\r\n\r\n"
 	} else {
 		response = "HTTP/1.1 404 NOT FOUND\r\n\r\n"
 	}
