@@ -36,13 +36,16 @@ func main() {
 
 func handler(conn net.Conn) {
 	request_bytes := make([]byte, 1024)
-	_, err := conn.Read(request_bytes)
+	n, err := conn.Read(request_bytes)
 	if err != nil {
 		log.Fatal(err)
 	}
 	request := string(request_bytes)
-	lines := strings.Split(request, "\r\n")
-	path := strings.Split(lines[0], " ")[1]
+	lines := strings.Split(request[:n], "\r\n")
+	start_line := lines[0]
+	start_line_parts := strings.Split(start_line, " ")
+	method := start_line_parts[0]
+	path := start_line_parts[1]
 
 	var response string
 	if path == "/" {
@@ -68,7 +71,7 @@ func handler(conn net.Conn) {
 			"Content-Type: text/plain\r\n" +
 			"Content-Length: " + len + "\r\n\r\n" +
 			user_agent + "\r\n\r\n"
-	} else if strings.HasPrefix(path, "/files/") {
+	} else if strings.HasPrefix(path, "/files/") && method == "GET" {
 		file_name, _ := strings.CutPrefix(path, "/files/")
 		file_name, err = url.QueryUnescape(file_name)
 		if err != nil {
@@ -93,6 +96,18 @@ func handler(conn net.Conn) {
 				body + "\r\n\r\n"
 		}
 		file.Close()
+	} else if strings.HasPrefix(path, "/files/") && method == "POST" {
+		file_name, _ := strings.CutPrefix(path, "/files/")
+		file_name, err = url.QueryUnescape(file_name)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = os.WriteFile(directory+"/"+file_name, []byte(lines[len(lines)-1]), 0666)
+		if err != nil {
+			log.Fatal(err)
+		}
+		response = "HTTP/1.1 201 CREATED\r\n\r\n"
 	} else {
 		response = "HTTP/1.1 404 NOT FOUND\r\n\r\n"
 	}
