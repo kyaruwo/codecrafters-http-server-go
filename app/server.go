@@ -42,6 +42,19 @@ func main() {
 			"Content-Type: text/plain\r\n" +
 			"Content-Length: " + len + "\r\n\r\n" +
 			body + "\r\n\r\n"
+	} else if path == "/user-agent" {
+		var user_agent string
+		for _, line := range lines {
+			if strings.HasPrefix(line, "User-Agent: ") {
+				user_agent, _ = strings.CutPrefix(line, "User-Agent: ")
+			}
+		}
+		len := strconv.Itoa(len(user_agent))
+
+		response = "HTTP/1.1 200 OK\r\n" +
+			"Content-Type: text/plain\r\n" +
+			"Content-Length: " + len + "\r\n\r\n" +
+			user_agent + "\r\n\r\n"
 	} else {
 		response = "HTTP/1.1 404 NOT FOUND\r\n\r\n"
 	}
