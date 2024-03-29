@@ -61,6 +61,25 @@ func handler(conn net.Conn) {
 			"Content-Type: text/plain\r\n" +
 			"Content-Length: " + len + "\r\n\r\n" +
 			user_agent + "\r\n\r\n"
+	} else if strings.HasPrefix(path, "/files/") {
+		file_name, _ := strings.CutPrefix(path, "/files/")
+		file, err := os.Open(file_name)
+		if err != nil {
+			response = "HTTP/1.1 404 NOT FOUND\r\n\r\n"
+		} else {
+			content := make([]byte, 1024)
+			bytes_length, err := file.Read(content)
+			if err != nil {
+				log.Fatal(err)
+			}
+			len := strconv.Itoa(bytes_length)
+			body := string(content)
+
+			response = "HTTP/1.1 200 OK\r\n" +
+				"Content-Type: application/octet-stream\r\n" +
+				"Content-Length: " + len + "\r\n\r\n" +
+				body + "\r\n\r\n"
+		}
 	} else {
 		response = "HTTP/1.1 404 NOT FOUND\r\n\r\n"
 	}
